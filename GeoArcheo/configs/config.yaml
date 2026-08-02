@@ -1,0 +1,83 @@
+# configs/config.yaml
+# Every number used anywhere in the project lives here.
+# Change here = changes everywhere.
+
+# ── IMAGE ──────────────────────────────────────────
+image:
+  size: 224          # Prithvi expects 224x224 pixels
+  bands: 6           # Sentinel-2 has 6 spectral bands
+  patch_size: 16     # Prithvi slices image into 16x16 blocks
+  normalize_factor: 10000  # raw Sentinel-2 values go up to 10000
+
+# ── MODEL ──────────────────────────────────────────
+model:
+  prithvi_name: "ibm-nasa-geospatial/Prithvi-EO-1.0-100M"
+  embedding_dim: 768     # Prithvi's output size (IBM/NASA chose this)
+
+# ── LORA ───────────────────────────────────────────
+lora:
+  rank: 8                # bottleneck size
+                         # A matrix: (768x8) = 6,144 numbers
+                         # B matrix: (8x768) = 6,144 numbers
+                         # vs W_Q: (768x768) = 589,824 numbers
+                         # 97% parameter reduction
+  alpha: 16              # scaling = alpha/rank = 16/8 = 2.0
+  dropout: 0.1           # zero out 10% of LoRA output during training
+  target_modules:        # inject into query and value matrices only
+    - "query"
+    - "value"
+
+# ── SITE TYPES ─────────────────────────────────────
+sites:
+  classes:
+    - "burial_mound"       # index 0
+    - "ancient_settlement" # index 1
+    - "temple"             # index 2
+    - "ancient_road"       # index 3
+    - "irrigation_canal"   # index 4
+    - "caravanserai"       # index 5
+  num_classes: 6
+
+# ── TRAINING ───────────────────────────────────────
+training:
+  batch_size: 32     # images processed at once
+  epochs: 20         # full passes through dataset
+  learning_rate: 0.0001  # how big each weight nudge is
+  train_split: 0.8   # 80% train, 20% validation
+  val_split: 0.1         # 10% images → check after each epoch
+                         #              pick best checkpoint
+  test_split: 0.1        # 10% images → final honest evaluation
+                         #              used ONCE after all training done
+  device: "cuda"     # use "cpu" if no GPU
+
+# ── ZERO SHOT ──────────────────────────────────────
+zero_shot:
+  unknown_threshold: 0.3  # below this = unknown site type
+
+# ── CONFORMAL PREDICTION ───────────────────────────
+conformal:
+  alpha: 0.10        # error tolerance
+                     # coverage = 1 - alpha = 90%
+                     # prediction set contains true answer
+                     # 90% of the time, mathematically proven
+
+# ── SYMBOLIC RULES ─────────────────────────────────
+symbolic:
+  water_distance_m: 500    # site must be within 500m of water
+  min_elevation_m: 50      # below 50m = flood-prone delta areas
+  max_elevation_m: 800     # above 800m = impractical mountain terrain
+  max_slope_degrees: 30    # site must be on slope < 30 degrees
+  neural_threshold: 0.65   # minimum neural score to consider
+  confirmed_threshold: 0.75 # above this = confirmed site
+
+# ── PATHS ──────────────────────────────────────────
+paths:
+  raw_data: "data/raw/"
+  processed_data: "data/processed/"
+  labels: "data/labels/"
+  eamena_geojson: "data/labels/eamena_sites.geojson"
+  checkpoint_dir: "checkpoints/"
+  checkpoint_path: "checkpoints/best_model.pt"
+  prototype_path: "checkpoints/prototypes.pt"
+  conformal_threshold_path: "checkpoints/conformal_threshold.npy"
+  results_dir: "results/"
