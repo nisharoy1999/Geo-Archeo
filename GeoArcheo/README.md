@@ -61,6 +61,10 @@ A GPU is needed for the Prithvi runs (developed on an A10G); the random-forest e
 - Sentinel-2 and Copernicus GLO-30 are open data. FABDEM (Hawker et al. 2022) is licensed CC BY-NC-SA 4.0: research use only, with attribution.
 - Prithvi-EO-2.0 is used through TerraTorch; check its model card for its licence.
 
+## Follow-up experiments (scripts only; results pending)
+
+Three reviewer-requested experiments are included as scripts: background distance and terrain-matched backgrounds, held-out feature importance and ablations for elevation, and a seasonal investigation. They have been run only on synthetic test data so far, so the paper treats them as future work. See `README_experiments.md`.
+
 ## Licence
 
 Code and paper: © 2026 Nisha Roy, all rights reserved; published for review and reproducibility only, not for reuse or modification (see `LICENSE`). Contributions and pull requests are not accepted. The data sources above keep their own licences.

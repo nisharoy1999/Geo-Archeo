@@ -24,6 +24,15 @@
 #   ... --extra-only --dem-dir data/raw_fabdem --extra-tag _fabdem
 #       same, with the bare-earth FABDEM elevation -> ..._extra_fabdem.npz
 #
+# BACKGROUND EXPERIMENTS (reviewer request; see pipeline/exp_backgrounds.py and run_background_builds.sh):
+#   --min-km 5 / 10        keep backgrounds at least 5 / 10 km from every known site (default 2.5)
+#   --terrain-matched      for each site, choose the backgrounds whose whole-patch terrain
+#                          (roughness and slope of the 2.2 km elevation window) is closest to the
+#                          site's own, from --match-pool random candidates in the same tile
+#                          (needs --dem-dir; use the FABDEM tiles). Tests whether the model finds
+#                          archaeology or just unusual terrain.
+#   Without these flags the sampling is exactly as before (same random stream, same samples).
+#
 # Then copy the result to the GPU machine:
 #   scp data/season_patches.npz archeo:~/GeoArcheo/data/
 
@@ -116,6 +125,16 @@ def read_dem(tile_name, x, y, crs):
     return d if d.shape == (SIZE, SIZE) else None
 
 
+def terrain_descriptor(d):
+    """Whole-patch terrain roughness and slope (log scale) of an elevation window, or None if the
+    elevation is missing. Used only to pick terrain-matched backgrounds."""
+    if d is None or not np.isfinite(d).any() or np.mean(~np.isfinite(d)) > 0.05:
+        return None
+    d = np.where(np.isfinite(d), d, np.nanmedian(d)).astype(np.float32)
+    gy, gx = np.gradient(d, float(PX_M))
+    return np.array([math.log(float(d.std()) + 0.1), math.log(float(np.hypot(gx, gy).mean()) + 0.005)])
+
+
 def reference_features(tiles, seed):
     """K_REF random, unlabeled windows per tile, described with the same
     features as the samples. In real use you would have exactly this: random
@@ -152,11 +171,19 @@ def main():
                          "(<out>_extra.npz); the big image file is left untouched")
     ap.add_argument("--dem-dir", default="data/raw_dem", help="elevation tiles to use")
     ap.add_argument("--extra-tag", default="", help="e.g. _fabdem -> <out>_extra_fabdem.npz")
+    ap.add_argument("--min-km", type=float, default=MIN_KM,
+                    help="backgrounds must be at least this far from every known site (default 2.5)")
+    ap.add_argument("--terrain-matched", action="store_true",
+                    help="choose backgrounds whose terrain roughness/slope matches the site's (needs --dem-dir)")
+    ap.add_argument("--match-pool", type=int, default=40,
+                    help="random candidates per site to choose the terrain-matched backgrounds from")
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
     DEM_DIR = Path(args.dem_dir)
     OUT_FILE = Path(args.out)
     print(f"Background seed {args.seed} -> {OUT_FILE}; elevation from {DEM_DIR}")
+    print(f"Backgrounds: at least {args.min_km} km from every known site; "
+          f"{'TERRAIN-MATCHED from ' + str(args.match_pool) + ' candidates' if args.terrain_matched else 'random'}")
     files = sorted(glob.glob(os.path.join(cfg['paths']['processed_data'], "*.pt")))
     ids = [torch.load(f).get('site_id') for f in files]
     coords = load_site_coords()
@@ -164,7 +191,8 @@ def main():
     print(f"{len(ids)} labeled sites. Seasons: {[s for s, _ in SEASON_DIRS]}")
 
     X, y, site_of, kept_ids, cx, cy, tiles, check = [], [], [], [], [], [], [], []
-    why = {"no tile": 0, "site window not clean in all seasons": 0, "no clean background": 0}
+    why = {"no tile": 0, "site window not clean in all seasons": 0, "no clean background": 0,
+           "no elevation to match terrain": 0}
 
     for n, sid in enumerate(ids, 1):
         lon, lat = coords[sid]
@@ -182,9 +210,9 @@ def main():
         # backgrounds: same tile, >= MIN_KM from every known site, clean in all seasons
         sx, sy = warp_transform("EPSG:4326", ref.crs, [p[0] for p in all_lonlat], [p[1] for p in all_lonlat])
         site_px = [ref.index(a, b) for a, b in zip(sx, sy)]
-        min_px = MIN_KM * 1000 / PX_M
+        min_px = args.min_km * 1000 / PX_M
         bgs = []
-        if ref.height > SIZE and ref.width > SIZE:
+        if ref.height > SIZE and ref.width > SIZE and not args.terrain_matched:
             for _ in range(TRIES):
                 if len(bgs) == N_BG:
                     break
@@ -193,6 +221,30 @@ def main():
                 if any(math.hypot(r - a, c - b) < min_px for a, b in site_px):
                     continue
                 bx, by = ref.xy(r, c)
+                img = read_all_seasons(tile.name, bx, by, ref.crs)
+                if img is not None:
+                    bgs.append((img, bx, by))
+        elif ref.height > SIZE and ref.width > SIZE:
+            site_t = terrain_descriptor(read_dem(tile.name, xs[0], ys[0], ref.crs))
+            if site_t is None:
+                why["no elevation to match terrain"] += 1
+                continue
+            cands = []
+            for _ in range(TRIES):
+                if len(cands) == args.match_pool:
+                    break
+                r = int(rng.integers(HALF, ref.height - HALF))
+                c = int(rng.integers(HALF, ref.width - HALF))
+                if any(math.hypot(r - a, c - b) < min_px for a, b in site_px):
+                    continue
+                bx, by = ref.xy(r, c)
+                t = terrain_descriptor(read_dem(tile.name, bx, by, ref.crs))
+                if t is not None:
+                    cands.append((float(np.abs(t - site_t).sum()), bx, by))
+            cands.sort(key=lambda z: z[0])           # closest terrain first
+            for _, bx, by in cands:
+                if len(bgs) == N_BG:
+                    break
                 img = read_all_seasons(tile.name, bx, by, ref.crs)
                 if img is not None:
                     bgs.append((img, bx, by))
