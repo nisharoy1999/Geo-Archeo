@@ -1,0 +1,40 @@
+# Dockerfile.cpu: ArcheoZS, CPU-only image for local testing on a Mac
+#
+# Runs natively on Apple Silicon (ARM) and on any x86 machine. No GPU, so it
+# is for checking that everything works in a container, not for full training.
+# Code + libraries only; data, outputs and the Prithvi cache are mounted.
+#
+# Build (inside the GeoArcheo folder):
+#   docker build -f Dockerfile.cpu -t geoarcheo:cpu .
+#
+# Quick test (baselines only, ~15-20 min):
+#   docker run --rm \
+#     -v "$PWD/data:/app/data" -v "$PWD/outputs:/app/outputs" -v "$HOME/hf_cache:/hf_cache" \
+#     geoarcheo:cpu python -u -m pipeline.detect_crossval --skip-lora
+
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/hf_cache
+
+# gdal-bin, make and curl are used by the `elevation` package (SRTM downloads)
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends gdal-bin make curl \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# CPU-only PyTorch first, so terratorch does not pull the large CUDA build
+RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+COPY requirements-docker.txt .
+RUN pip install -r requirements-docker.txt
+
+COPY configs ./configs
+COPY models ./models
+COPY pipeline ./pipeline
+COPY utils ./utils
+COPY *.py ./
+
+CMD ["python", "-u", "-m", "pipeline.detect_crossval"]

@@ -1,0 +1,14 @@
+# Rename this file to .dockerignore (with the leading dot) in GeoArcheo/.
+# Keeps the image small: data and results are mounted, never copied in.
+data
+outputs
+checkpoints
+cache
+zoom_sequences
+archeo_env
+.git
+.idea
+.vscode
+__pycache__
+*.pyc
+*.tar.gz
