@@ -1,0 +1,9 @@
+Copyright (c) 2026 Nisha Roy. All rights reserved.
+
+This repository is made public for review and reproducibility of the
+accompanying research paper only. You may view the code and cite the work.
+No licence is granted to copy, modify, redistribute, or use this code or
+the paper in other works without prior written permission from the author.
+
+Third-party data and models used by this project (Sentinel-2, Copernicus
+GLO-30, FABDEM, Prithvi-EO-2.0, EAMENA) keep their own licences.

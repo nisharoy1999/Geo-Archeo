@@ -1,0 +1,13 @@
+numpy
+scipy
+pandas
+scikit-learn
+matplotlib
+rasterio
+shapely
+geopandas
+requests
+torch
+terratorch      # Prithvi-EO-2.0 (GPU runs only)
+openeo          # Copernicus Data Space downloads
+fabdem          # bare-earth elevation

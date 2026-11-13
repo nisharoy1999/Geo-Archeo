@@ -1,20 +1,29 @@
-# Python
+# data and derived products (site coordinates must never be committed)
+data/
+outputs/
+logs/
+*.tif
+*.tiff
+*.npz
+*.npy
+*.pt
+*.pth
+*.geojson
+*.gpkg
+*.shp
+site_locations*
+eamena_*
+*_log*.txt
+# secrets and local files
+.env
+*.pem
+*.key
+.DS_Store
 __pycache__/
 *.pyc
-
-# Virtual environments
-archeo_env/
+.venv/
 venv/
-.env/
-
-# IDE
-.idea/
-
-# Mac
-.DS_Store
-
-# Jupyter
 .ipynb_checkpoints/
-
-# Logs
+archeo_env/
+.idea/
 *.log

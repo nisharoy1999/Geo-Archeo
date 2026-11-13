@@ -1,0 +1,16 @@
+# Libraries for the ArcheoZS experiments (PyTorch comes from the base image).
+# For exact reproducibility, replace this file with pinned versions from your
+# working Mac environment:
+#   pip freeze | grep -iE "^(terratorch|peft|rasterio|geopandas|shapely|pyproj|scikit-learn|scipy|osmnx|elevation|tqdm|pyyaml)==" > requirements-docker.txt
+terratorch
+peft
+rasterio
+geopandas
+shapely
+pyproj
+scikit-learn
+scipy
+osmnx
+elevation
+tqdm
+pyyaml
