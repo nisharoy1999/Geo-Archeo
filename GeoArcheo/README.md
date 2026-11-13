@@ -63,7 +63,7 @@ A GPU is needed for the Prithvi runs (developed on an A10G); the random-forest e
 
 ## Licence
 
-Code: MIT (see `LICENSE`). The paper in `docs/` is © the author; the data sources above keep their own licences.
+Code and paper: © 2026 Nisha Roy, all rights reserved; published for review and reproducibility only, not for reuse or modification (see `LICENSE`). Contributions and pull requests are not accepted. The the data sources above keep their own licences.
 
 ## Citation
 
