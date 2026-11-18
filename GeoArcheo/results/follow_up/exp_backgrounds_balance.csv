@@ -1,0 +1,6 @@
+condition,roughness_gap,slope_gap
+main,0.195,0.312
+km5,0.219,0.364
+km10,0.506,0.625
+matched_km2.5,0.029,0.037
+matched_km5,0.159,0.178

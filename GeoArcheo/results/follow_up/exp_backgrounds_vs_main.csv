@@ -1,0 +1,25 @@
+model,condition,sites,diff,lo,hi,holm_p_higher,holm_p_lower,verdict
+Colour (1 date),km5,196,0.0522,0.002,0.1225,0.084,1.0,no clear change
+Colour (1 date),km10,74,0.024,-0.0543,0.2414,0.9492,1.0,no clear change
+Colour (1 date),matched_km2.5,196,-0.0471,-0.1032,0.0112,1.0,0.2352,no clear change
+Colour (1 date),matched_km5,196,-0.0476,-0.1277,0.0066,1.0,0.2352,no clear change
+Elevation only,km5,196,0.0079,-0.027,0.0601,1.0,1.0,no clear change
+Elevation only,km10,74,-0.0023,-0.0871,0.0849,1.0,1.0,no clear change
+Elevation only,matched_km2.5,196,-0.0334,-0.0848,0.0078,1.0,0.2192,no clear change
+Elevation only,matched_km5,196,-0.0527,-0.1242,0.0105,1.0,0.2192,no clear change
+Colour + elevation,km5,196,0.0204,-0.0328,0.0757,1.0,0.7388,no clear change
+Colour + elevation,km10,74,-0.036,-0.0724,0.0694,1.0,0.3112,no clear change
+Colour + elevation,matched_km2.5,196,-0.0607,-0.1344,-0.0034,1.0,0.0576,no clear change
+Colour + elevation,matched_km5,196,-0.0641,-0.1265,-0.0124,1.0,0.0216,lower than main
+Patch-level terrain only,km5,196,0.0159,-0.0505,0.0748,1.0,1.0,no clear change
+Patch-level terrain only,km10,74,0.0278,-0.0477,0.1204,0.7776,1.0,no clear change
+Patch-level terrain only,matched_km2.5,196,-0.0006,-0.0315,0.0355,1.0,1.0,no clear change
+Patch-level terrain only,matched_km5,196,-0.0289,-0.0905,0.0474,1.0,0.8552,no clear change
+Elevation without patch-level terrain,km5,196,-0.0057,-0.0518,0.0596,1.0,0.6012,no clear change
+Elevation without patch-level terrain,km10,74,-0.0398,-0.1437,0.0718,1.0,0.6012,no clear change
+Elevation without patch-level terrain,matched_km2.5,196,-0.034,-0.0734,0.0018,1.0,0.1016,no clear change
+Elevation without patch-level terrain,matched_km5,196,-0.0624,-0.1177,0.0005,1.0,0.1016,no clear change
+"Local height cues only (80, 160 m)",km5,196,0.0652,0.0221,0.129,0.0008,1.0,higher than main
+"Local height cues only (80, 160 m)",km10,74,-0.0293,-0.131,0.1034,1.0,0.7292,no clear change
+"Local height cues only (80, 160 m)",matched_km2.5,196,-0.0473,-0.1187,0.0093,1.0,0.1818,no clear change
+"Local height cues only (80, 160 m)",matched_km5,196,-0.0431,-0.0902,-0.004,1.0,0.0648,no clear change

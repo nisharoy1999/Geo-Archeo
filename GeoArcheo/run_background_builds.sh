@@ -32,7 +32,7 @@ build() {
     if [ "$s" = "123" ]; then out="data/bg/$name/season_patches.npz"; else out="data/bg/$name/season_patches_s$s.npz"; fi
     if [ -f "$out" ]; then echo "skip $out (exists)"; continue; fi
     echo "=== $name, background seed $s ==="
-    python build_season_patches.py --seed "$s" --out "$out" $DEM "$@"
+    python3 bg_build_notorch.py --seed "$s" --out "$out" $DEM "$@"
   done
 }
 

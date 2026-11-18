@@ -34,7 +34,7 @@ import argparse
 import numpy as np
 
 from pipeline.exp_common import (DEM_NAMES, Pool, clean, cluster_boot, cv_scores, fmt_ci, holm, load_features,
-                                 make_folds, run_paths, site_auc, site_table, write_csv)
+                                 make_folds, run_paths, site_auc, site_table, write_csv, memo, run_resumable)
 
 DEFAULT = ["main=data/season_patches",
            "km5=data/bg/km5/season_patches",
@@ -84,7 +84,13 @@ def main():
     ap.add_argument("--extra-tag", default="_fabdem")
     ap.add_argument("--seeds", type=int, default=5)
     ap.add_argument("--trees", type=int, default=500)
+    ap.add_argument("--budget", type=float, default=0,
+                    help="stop cleanly after this many seconds (exit code 3); run again to continue")
     args = ap.parse_args()
+    run_resumable(run, args)
+
+
+def run(args):
 
     pools, info = {}, {}
     for spec in args.conditions:
@@ -98,7 +104,9 @@ def main():
         for seed, path in runs:
             F = load_features(path, args.extra_tag)
             folds = make_folds(F["y"], F["grp"])
-            per_model = {m: site_auc(cv_scores(X, F["y"], folds, args.trees), F) for m, X in matrices(F).items()}
+            tag = f"bg_{name}_{seed}_{args.trees}t"
+            per_model = {m: memo(f"{tag}_{m}", lambda X=X: site_auc(cv_scores(X, F["y"], folds, args.trees), F))
+                         for m, X in matrices(F).items()}
             pool.add(per_model, F)
             bal.append(balance(F))
             n_bg.append(int((F["y"] == 0).sum())); n_sites.append(int((F["y"] == 1).sum()))

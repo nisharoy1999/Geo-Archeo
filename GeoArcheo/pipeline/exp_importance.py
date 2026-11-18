@@ -32,7 +32,8 @@ import numpy as np
 from scipy.stats import spearmanr
 
 from pipeline.exp_common import (DEM_NAMES, Pool, cluster_boot, cv_scores, fmt_ci, forest, load_features,
-                                 make_folds, run_paths, site_auc, write_csv, clean, report_comparisons)
+                                 make_folds, run_paths, site_auc, write_csv, clean, report_comparisons,
+                                 memo, run_resumable)
 
 GROUPS = {
     "window 80 m (centre + peak)": [0, 1],
@@ -71,14 +72,18 @@ def top_k_selector(k, trees):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--budget", type=float, default=0,
+                    help="stop after about this many seconds (0 = no limit); run again to continue")
     ap.add_argument("--base", default="data/season_patches")
     ap.add_argument("--extra-tag", default="_fabdem")
     ap.add_argument("--seeds", type=int, default=5, help="how many background draws to use (max 5)")
     ap.add_argument("--trees", type=int, default=500)
     ap.add_argument("--repeats", type=int, default=5, help="shuffles per permutation-importance estimate")
     ap.add_argument("--with-colour", action="store_true", help="also test colour + each elevation group")
-    args = ap.parse_args()
+    run_resumable(_run, ap.parse_args())
 
+
+def _run(args):
     runs = run_paths(args.base, args.seeds)
     if not runs:
         raise SystemExit(f"No files found for {args.base}[_sN].npz")
@@ -114,51 +119,57 @@ def main():
         folds = make_folds(y, F["grp"])
         per_model = {}
 
-        # ---- full model, importance on held-out regions
-        score, models = cv_scores(Xd, y, folds, args.trees, return_models=True)
-        per_model["All 15 elevation features"] = site_auc(score, F)
-        base = within_site_mean(score, F)
-        rng = np.random.default_rng(int(seed))
-        imp_tr.append(np.mean([m.feature_importances_[:n_feat] for m, _ in models], axis=0))
-        perm = np.zeros(n_feat)
-        for j in range(n_feat):
-            perm[j] = np.mean([base - within_site_mean(oof_with_permutation(models, Xd, y, folds, [j], rng), F)
-                               for _ in range(args.repeats)])
-        imp_perm.append(perm)
-        grp_drop = {}
-        for g, cols in GROUPS.items():
-            grp_drop[g] = np.mean([base - within_site_mean(oof_with_permutation(models, Xd, y, folds, cols, rng), F)
-                                   for _ in range(args.repeats)])
-        imp_group.append(grp_drop)
-        if shap is not None:
-            acc = np.zeros(Xd.shape[1])
-            n_seen = 0
-            for (tr, te), (rf, _) in zip(folds, models):
-                sv = shap.TreeExplainer(rf).shap_values(Xd[te])
-                sv = np.asarray(sv[1] if isinstance(sv, list) else (sv[..., 1] if np.ndim(sv) == 3 else sv))
-                acc += np.abs(sv).sum(0)
-                n_seen += len(te)
-            imp_shap.append((acc / n_seen)[:n_feat])
+        tag = f"imp_{args.trees}t_{seed}"
 
-        # ---- ablations (each scored on held-out regions)
+        # ---- full model, importance on held-out regions (one saved block per draw)
+        def block():
+            score, models = cv_scores(Xd, y, folds, args.trees, return_models=True)
+            base = within_site_mean(score, F)
+            rng = np.random.default_rng(int(seed))
+            perm = [float(np.mean([base - within_site_mean(oof_with_permutation(models, Xd, y, folds, [j], rng), F)
+                                   for _ in range(args.repeats)])) for j in range(n_feat)]
+            groups = {g: float(np.mean([base - within_site_mean(oof_with_permutation(models, Xd, y, folds, cols, rng), F)
+                                        for _ in range(args.repeats)])) for g, cols in GROUPS.items()}
+            shap_v = None
+            if shap is not None:
+                acc, n_seen = np.zeros(Xd.shape[1]), 0
+                for (tr, te), (rf, _) in zip(folds, models):
+                    sv = shap.TreeExplainer(rf).shap_values(Xd[te])
+                    sv = np.asarray(sv[1] if isinstance(sv, list) else (sv[..., 1] if np.ndim(sv) == 3 else sv))
+                    acc += np.abs(sv).sum(0)
+                    n_seen += len(te)
+                shap_v = (acc / n_seen)[:n_feat]
+            return dict(all=site_auc(score, F), base=base, perm=perm, groups=groups,
+                        impurity=np.mean([m.feature_importances_[:n_feat] for m, _ in models], axis=0),
+                        shap=shap_v)
+
+        blk = memo(tag + "_block" + ("_shap" if shap is not None else ""), block)
+        per_model["All 15 elevation features"] = blk["all"]
+        base = blk["base"]
+        imp_tr.append(np.array(blk["impurity"]))
+        imp_perm.append(np.array(blk["perm"]))
+        imp_group.append(blk["groups"])
+        if blk["shap"] is not None:
+            imp_shap.append(np.array(blk["shap"]))
+
+        # ---- ablations (each scored on held-out regions; each saved as soon as it is done)
         for name, cols in set_defs.items():
             if name == "All 15 elevation features":
                 continue
-            sc = cv_scores(Xd, y, folds, args.trees, columns=cols + [flag])
-            per_model[name] = site_auc(sc, F)
+            per_model[name] = memo(f"{tag}_{name}", lambda cols=cols: site_auc(
+                cv_scores(Xd, y, folds, args.trees, columns=cols + [flag]), F))
         for k in (1, 2, 3, 5, 8):
-            sc = cv_scores(Xd, y, folds, args.trees, columns=lambda tr, X, yy, k=k: top_k_selector(k, args.trees)(tr, X, yy) + [flag])
-            per_model[f"Top {k} features (chosen on training regions only)"] = site_auc(sc, F)
+            per_model[f"Top {k} features (chosen on training regions only)"] = memo(f"{tag}_top{k}", lambda k=k: site_auc(
+                cv_scores(Xd, y, folds, args.trees,
+                          columns=lambda tr, X, yy, k=k: top_k_selector(k, args.trees)(tr, X, yy) + [flag]), F))
         if args.with_colour:
             Xc = clean(F["season"][:, 0, :])                              # one date (winter), as in the paper
-            sc = cv_scores(Xc, y, folds, args.trees)
-            per_model["Colour alone (1 date)"] = site_auc(sc, F)
+            per_model["Colour alone (1 date)"] = memo(f"{tag}_colour", lambda: site_auc(cv_scores(Xc, y, folds, args.trees), F))
             for g, cols in GROUPS.items():
                 Xcg = np.hstack([Xc, Xd[:, cols + [flag]]])
-                sc = cv_scores(Xcg, y, folds, args.trees)
-                per_model[f"Colour + {g}"] = site_auc(sc, F)
+                per_model[f"Colour + {g}"] = memo(f"{tag}_colour_{g}", lambda Xcg=Xcg: site_auc(cv_scores(Xcg, y, folds, args.trees), F))
             Xall = np.hstack([Xc, Xd])
-            per_model["Colour + all 15 elevation features"] = site_auc(cv_scores(Xall, y, folds, args.trees), F)
+            per_model["Colour + all 15 elevation features"] = memo(f"{tag}_colour_all", lambda: site_auc(cv_scores(Xall, y, folds, args.trees), F))
         pool.add(per_model, F)
         print(f"  seed {seed}: all-elevation within-site AUC {base:.3f}", flush=True)
 

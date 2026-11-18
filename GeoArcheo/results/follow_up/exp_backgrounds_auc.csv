@@ -1,0 +1,31 @@
+condition,model,within_site_auc,lo,hi,sites,draws
+main,Colour (1 date),0.5941,0.507,0.6467,196,3
+main,Elevation only,0.6757,0.6359,0.6977,196,3
+main,Colour + elevation,0.6956,0.6402,0.7283,196,3
+main,Patch-level terrain only,0.5445,0.4916,0.5916,196,3
+main,Elevation without patch-level terrain,0.6763,0.6443,0.6967,196,3
+main,"Local height cues only (80, 160 m)",0.6264,0.5693,0.6576,196,3
+km5,Colour (1 date),0.6463,0.5431,0.7249,196,3
+km5,Elevation only,0.6837,0.6224,0.7403,196,3
+km5,Colour + elevation,0.716,0.6285,0.7725,196,3
+km5,Patch-level terrain only,0.5604,0.4722,0.6567,196,3
+km5,Elevation without patch-level terrain,0.6706,0.6104,0.7335,196,3
+km5,"Local height cues only (80, 160 m)",0.6916,0.6222,0.7622,196,3
+km10,Colour (1 date),0.6381,0.5108,0.8072,74,3
+km10,Elevation only,0.7005,0.6199,0.75,74,3
+km10,Colour + elevation,0.7057,0.6022,0.8156,74,3
+km10,Patch-level terrain only,0.5788,0.5321,0.6452,74,3
+km10,Elevation without patch-level terrain,0.6824,0.597,0.7557,74,3
+km10,"Local height cues only (80, 160 m)",0.6284,0.5324,0.713,74,3
+matched_km2.5,Colour (1 date),0.5471,0.4778,0.6034,196,3
+matched_km2.5,Elevation only,0.6423,0.5868,0.6811,196,3
+matched_km2.5,Colour + elevation,0.6349,0.5498,0.695,196,3
+matched_km2.5,Patch-level terrain only,0.5439,0.5134,0.5699,196,3
+matched_km2.5,Elevation without patch-level terrain,0.6423,0.5969,0.6736,196,3
+matched_km2.5,"Local height cues only (80, 160 m)",0.5791,0.4967,0.6421,196,3
+matched_km5,Colour (1 date),0.5465,0.4427,0.6284,196,3
+matched_km5,Elevation only,0.623,0.5547,0.6654,196,3
+matched_km5,Colour + elevation,0.6315,0.5577,0.6818,196,3
+matched_km5,Patch-level terrain only,0.5156,0.4853,0.5646,196,3
+matched_km5,Elevation without patch-level terrain,0.6139,0.5577,0.6572,196,3
+matched_km5,"Local height cues only (80, 160 m)",0.5833,0.52,0.6215,196,3

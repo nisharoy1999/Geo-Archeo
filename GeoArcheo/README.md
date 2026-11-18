@@ -61,9 +61,17 @@ A GPU is needed for the Prithvi runs (developed on an A10G); the random-forest e
 - Sentinel-2 and Copernicus GLO-30 are open data. FABDEM (Hawker et al. 2022) is licensed CC BY-NC-SA 4.0: research use only, with attribution.
 - Prithvi-EO-2.0 is used through TerraTorch; check its model card for its licence.
 
-## Follow-up experiments (scripts only; results pending)
+## Follow-up experiments
 
-Three reviewer-requested experiments are included as scripts: background distance and terrain-matched backgrounds, held-out feature importance and ablations for elevation, and a seasonal investigation. They have been run only on synthetic test data so far, so the paper treats them as future work. See `README_experiments.md`.
+Three analyses requested in review were run on the real data (196 sites, 14 regions, 300 km regions held out). Summary tables and run logs are in `results/follow_up/`; they hold only summary numbers, no site coordinates. They are written up in Section 5.8 of the paper.
+
+| Analysis | Script | Main finding |
+|---|---|---|
+| Background design (5 km and 10 km buffers, terrain-matched backgrounds) | `pipeline/exp_backgrounds.py`, `run_background_builds.sh` | The elevation gain stays at +0.07 to +0.10 in every design; matching lowers the elevation-only AUC by 0.03 to 0.05. The 10 km condition covers only 74 sites. Three background draws. |
+| Held-out importance, SHAP and ablations for elevation | `pipeline/exp_importance.py` | The 80 m window carries most of the signal; no single feature is essential; selecting top features inside each fold does not help. |
+| Seasons, cloud/snow, site type, redundancy | `pipeline/exp_seasons.py` | Four seasons beat winter alone by +0.03 to +0.04, not significant after correction; the 16 sites with an obscured winter image show a larger gain, too few to confirm. |
+
+The scripts save finished work in `outputs/exp_cache/` and accept `--budget SECONDS` (exit code 3 means "run again"). `bg_build_notorch.py` runs `build_season_patches.py` on a machine without PyTorch installed. See `README_experiments.md`.
 
 ## Licence
 

@@ -1,0 +1,8 @@
+item,value
+change features predicted from winter: median held-out R2,0.266
+change features with held-out R2 > 0.5 (count),4
+permutation drop: Jan-Feb,0.0297
+permutation drop: Apr-Jun,0.014
+permutation drop: Jul-Sep,0.0154
+permutation drop: Oct-Dec,0.0142
+permutation drop: Change over the year,0.0014

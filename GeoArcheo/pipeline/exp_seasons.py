@@ -38,7 +38,8 @@ from sklearn.model_selection import GroupKFold
 
 import pipeline.exp_common as ec
 from pipeline.exp_common import (SEASONS, Pool, bright_at, clean, cluster_boot, cv_scores, fmt_ci, load_features, make_folds,
-                                 report_comparisons, run_paths, site_auc, site_kinds, site_table, write_csv)
+                                 report_comparisons, run_paths, site_auc, site_kinds, site_table, write_csv, memo,
+                                 run_resumable)
 from pipeline.exp_importance import oof_with_permutation, within_site_mean
 
 W, SP, SU, AU = SEASONS                                   # season names
@@ -67,6 +68,8 @@ def models_for(F):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--budget", type=float, default=0,
+                    help="stop after about this many seconds (0 = no limit); run again to continue")
     ap.add_argument("--base", default="data/season_patches")
     ap.add_argument("--extra-tag", default="_fabdem")
     ap.add_argument("--seeds", type=int, default=5)
@@ -89,19 +92,21 @@ def main():
             F0 = F
         folds = make_folds(F["y"], F["grp"])
         per_model, M = {}, models_for(F)
+        tag = f"seasons_{args.trees}t_{seed}"
         for name, X in M.items():
+            per_model[name] = memo(f"{tag}_{name}", lambda X=X: site_auc(cv_scores(X, F["y"], folds, args.trees), F))
+
+        def perm_block():
+            X = M["Four seasons + change features"]
             sc, models = cv_scores(X, F["y"], folds, args.trees, return_models=True)
-            per_model[name] = site_auc(sc, F)
-            if name == "Four seasons + change features":
-                base = within_site_mean(sc, F)
-                n_s = F["season"].shape[2]
-                n_c = F["change"].shape[1]
-                cols = {SEASONS[s]: list(range(s * n_s, (s + 1) * n_s)) for s in range(4)}
-                cols["Change over the year"] = list(range(4 * n_s, 4 * n_s + n_c))
-                rng = np.random.default_rng(int(seed))
-                perm_groups.append({g: np.mean([base - within_site_mean(
-                    oof_with_permutation(models, X, F["y"], folds, c, rng), F) for _ in range(5)])
-                    for g, c in cols.items()})
+            base = within_site_mean(sc, F)
+            n_s, n_c = F["season"].shape[2], F["change"].shape[1]
+            cols = {SEASONS[s]: list(range(s * n_s, (s + 1) * n_s)) for s in range(4)}
+            cols["Change over the year"] = list(range(4 * n_s, 4 * n_s + n_c))
+            rng = np.random.default_rng(int(seed))
+            return {g: float(np.mean([base - within_site_mean(oof_with_permutation(models, X, F["y"], folds, c, rng), F)
+                                      for _ in range(5)])) for g, c in cols.items()}
+        perm_groups.append(memo(f"{tag}_permutation_groups", perm_block))
         pool.add(per_model, F)
         print(f"  winter {np.mean(list(per_model[f'Winter only ({W})'].values())):.3f}  "
               f"four seasons {np.mean(list(per_model['Four seasons + change features'].values())):.3f}", flush=True)

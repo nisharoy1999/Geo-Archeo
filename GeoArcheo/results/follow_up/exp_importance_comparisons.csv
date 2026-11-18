@@ -1,0 +1,32 @@
+comparison,diff,lo,hi,p,holm_p,verdict
+Leave out: centre_height_80m minus all 15 features,-0.0167,-0.0359,0.0028,0.9578,1.0,not shown
+Leave out: peak_height_80m minus all 15 features,0.0034,-0.0087,0.0107,0.2372,1.0,not shown
+Leave out: centre_height_160m minus all 15 features,0.001,-0.0168,0.0144,0.4738,1.0,not shown
+Leave out: peak_height_160m minus all 15 features,0.0027,-0.0067,0.0069,0.2112,1.0,not shown
+Leave out: centre_height_320m minus all 15 features,0.0031,-0.0144,0.0119,0.3274,1.0,not shown
+Leave out: peak_height_320m minus all 15 features,0.0122,0.0015,0.0183,0.016,0.368,not shown
+Leave out: centre_height_640m minus all 15 features,0.0044,-0.0085,0.012,0.2596,1.0,not shown
+Leave out: peak_height_640m minus all 15 features,-0.001,-0.0172,0.0077,0.6206,1.0,not shown
+Leave out: slope_centre minus all 15 features,-0.0068,-0.0262,0.0021,0.9186,1.0,not shown
+Leave out: slope_patch minus all 15 features,-0.0065,-0.0126,0.002,0.9392,1.0,not shown
+Leave out: slope_centre_minus_patch minus all 15 features,-0.0092,-0.029,0.0058,0.8906,1.0,not shown
+Leave out: roughness_centre minus all 15 features,-0.0014,-0.0116,0.0045,0.6762,1.0,not shown
+Leave out: roughness_patch minus all 15 features,0.0085,-0.0044,0.0181,0.0748,1.0,not shown
+Leave out: centre_minus_patch_mean minus all 15 features,0.0075,-0.0012,0.0141,0.0406,0.8932,not shown
+Leave out: share_of_patch_lower minus all 15 features,0.0082,-0.0083,0.016,0.1244,1.0,not shown
+Leave out group: window 80 m (centre + peak) minus all 15 features,-0.018,-0.0375,0.0054,0.945,1.0,not shown
+Leave out group: window 160 m (centre + peak) minus all 15 features,0.0034,-0.0074,0.0174,0.2794,1.0,not shown
+Leave out group: window 320 m (centre + peak) minus all 15 features,0.0078,-0.0081,0.0179,0.1672,1.0,not shown
+Leave out group: window 640 m (centre + peak) minus all 15 features,-0.0014,-0.0133,0.0048,0.6562,1.0,not shown
+Leave out group: all centre-height features minus all 15 features,-0.0224,-0.0645,0.0099,0.9064,1.0,not shown
+Leave out group: all peak-height features minus all 15 features,0.0024,-0.0066,0.0083,0.219,1.0,not shown
+Leave out group: slope and roughness minus all 15 features,-0.0296,-0.0561,0.0028,0.961,1.0,not shown
+All 15 features minus chance (0.5),0.1793,0.1424,0.2008,0.0002,0.0062,CONVINCING
+Colour + all elevation minus colour alone,0.0837,0.0558,0.1345,0.0002,0.0062,CONVINCING
+Colour + window 80 m (centre + peak) minus colour alone,0.0636,0.0389,0.0956,0.0002,0.0062,CONVINCING
+Colour + window 160 m (centre + peak) minus colour alone,0.0551,0.0255,0.0923,0.0006,0.0162,CONVINCING
+Colour + window 320 m (centre + peak) minus colour alone,0.0218,0.0052,0.0325,0.0102,0.2448,not shown
+Colour + window 640 m (centre + peak) minus colour alone,0.0139,-0.0028,0.0357,0.0496,1.0,not shown
+Colour + all centre-height features minus colour alone,0.0514,0.0189,0.0922,0.0026,0.065,not shown
+Colour + all peak-height features minus colour alone,0.0571,0.0226,0.0877,0.002,0.052,not shown
+Colour + slope and roughness minus colour alone,0.0582,0.0344,0.1101,0.0002,0.0062,CONVINCING

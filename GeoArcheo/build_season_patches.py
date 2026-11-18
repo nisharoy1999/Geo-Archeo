@@ -191,6 +191,8 @@ def main():
     print(f"{len(ids)} labeled sites. Seasons: {[s for s, _ in SEASON_DIRS]}")
 
     X, y, site_of, kept_ids, cx, cy, tiles, check = [], [], [], [], [], [], [], []
+    RAWX = Path(str(OUT_FILE) + '.rawx.tmp')            # patches are streamed to disk, not held in memory
+    rawf = open(RAWX, 'wb'); n_x = 0; x_shape = x_dtype = None
     why = {"no tile": 0, "site window not clean in all seasons": 0, "no clean background": 0,
            "no elevation to match terrain": 0}
 
@@ -256,7 +258,7 @@ def main():
         kept_ids.append(sid)
         for img, px, py, label in [(site_img, xs[0], ys[0], 1)] + [(b, bx, by, 0) for b, bx, by in bgs]:
             if not args.extra_only:
-                X.append(img)
+                rawf.write(np.ascontiguousarray(img).tobytes()); n_x += 1; x_shape, x_dtype = img.shape, img.dtype
             y.append(label); site_of.append(k); cx.append(px); cy.append(py); tiles.append(tile.name)
             check.append(int(img.astype(np.int64).sum()))       # fingerprint: proves _extra matches the images
         if n % 20 == 0:
@@ -293,10 +295,21 @@ def main():
                         check=np.array(check, dtype=np.int64))
     print(f"Saved -> {extra} ({extra.stat().st_size / 1e6:.0f} MB)")
     if not args.extra_only:
-        X = np.stack(X)
-        np.savez_compressed(OUT_FILE, X=X, y=np.array(y), site=site_of, grp=grp,
-                            ids=np.array(kept_ids), seasons=np.array([s for s, _ in SEASON_DIRS]))
+        rawf.close()
+        X = np.memmap(RAWX, dtype=x_dtype, mode='r', shape=(n_x,) + x_shape)
+        PART = Path(str(OUT_FILE) + '.part')
+        with open(PART, 'wb') as fh:
+            np.savez(fh, X=X, y=np.array(y), site=site_of, grp=grp,
+                     ids=np.array(kept_ids), seasons=np.array([s for s, _ in SEASON_DIRS]))
+        os.replace(PART, OUT_FILE)          # only a finished file ever carries the real name
         print(f"Saved -> {OUT_FILE} ({OUT_FILE.stat().st_size / 1e9:.2f} GB on disk)")
+    else:
+        rawf.close()
+    del X
+    try:
+        RAWX.unlink()
+    except OSError:
+        open(RAWX, 'wb').close()      # deleting may be blocked; at least free the space
 
 
 if __name__ == "__main__":

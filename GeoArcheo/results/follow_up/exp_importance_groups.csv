@@ -1,0 +1,8 @@
+group,permutation_drop
+window 80 m (centre + peak),0.07177
+window 160 m (centre + peak),0.02578
+window 320 m (centre + peak),0.01163
+window 640 m (centre + peak),0.00476
+all centre-height features,0.08551
+all peak-height features,0.06476
+slope and roughness,0.02592

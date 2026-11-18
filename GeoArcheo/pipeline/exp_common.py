@@ -18,7 +18,12 @@
 #
 # NOTHING here peeks at test regions when choosing features or thresholds.
 
+import hashlib
+import json
 import os
+import re
+import sys
+import time
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -243,3 +248,59 @@ def site_kinds(F_ids):
     from pipeline.detect_dem import site_types
     t = site_types()
     return np.array([t.get(s, "?") for s in F_ids])
+
+
+# --------------------------------------------------------------------------- resumable runs
+# Every finished model is saved to outputs/exp_cache/, so a run that is stopped (or paused with
+# --budget SECONDS) continues where it left off the next time you run the same command.
+CACHE_DIR = os.path.join("outputs", "exp_cache")
+_deadline = None
+
+
+class Pause(Exception):
+    """Raised when the time budget is used up; the script exits and can simply be run again."""
+
+
+def set_budget(seconds):
+    global _deadline
+    _deadline = time.time() + seconds if seconds else None
+
+
+def _jsonable(v):
+    if isinstance(v, dict):
+        return {str(k): _jsonable(x) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_jsonable(x) for x in v]
+    if isinstance(v, np.ndarray):
+        return v.tolist()
+    if isinstance(v, (np.floating, np.integer)):
+        return v.item()
+    return v
+
+
+def memo(key, fn):
+    """Return the saved result for `key`, or compute it with fn(), save it and return it."""
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", key)[:120] + "_" + hashlib.md5(key.encode()).hexdigest()[:8]
+    path = os.path.join(CACHE_DIR, safe + ".json")
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    if _deadline is not None and time.time() > _deadline:
+        raise Pause(key)
+    val = _jsonable(fn())
+    with open(path + ".tmp", "w") as f:
+        json.dump(val, f)
+    os.replace(path + ".tmp", path)
+    return val
+
+
+def run_resumable(run, args):
+    """Run `run(args)`; if the time budget runs out, say so and exit with code 3 (run it again)."""
+    set_budget(getattr(args, "budget", 0))
+    try:
+        run(args)
+    except Pause as e:
+        print(f"\nPAUSED (time budget used up) before: {e}\n"
+              "Run the same command again to continue; finished work is saved in outputs/exp_cache/.")
+        sys.exit(3)

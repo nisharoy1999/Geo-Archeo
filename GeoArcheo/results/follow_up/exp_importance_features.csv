@@ -1,0 +1,16 @@
+feature,permutation_drop,impurity_train,mean_abs_shap_heldout
+centre_height_80m,0.05619,0.09489,0.0539
+slope_centre_minus_patch,0.01299,0.06347,0.02285
+centre_height_160m,0.01177,0.07274,0.03126
+slope_patch,0.0083,0.06867,0.02968
+peak_height_640m,0.00639,0.06512,0.02508
+peak_height_80m,0.00599,0.06148,0.02148
+peak_height_160m,0.00585,0.07061,0.02584
+centre_height_320m,0.00415,0.05857,0.01775
+roughness_centre,0.00224,0.06683,0.02083
+peak_height_320m,0.00102,0.0722,0.02698
+slope_centre,-0.00048,0.06639,0.01873
+centre_height_640m,-0.00211,0.05387,0.0191
+centre_minus_patch_mean,-0.00469,0.05211,0.01661
+roughness_patch,-0.00946,0.06471,0.01996
+share_of_patch_lower,-0.01347,0.06833,0.02453
