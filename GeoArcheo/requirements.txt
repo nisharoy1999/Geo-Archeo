@@ -11,3 +11,5 @@ torch
 terratorch      # Prithvi-EO-2.0 (GPU runs only)
 openeo          # Copernicus Data Space downloads
 fabdem          # bare-earth elevation
+pyyaml
+shap           # optional: SHAP in pipeline/exp_importance.py

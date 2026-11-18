@@ -32,9 +32,8 @@ import numpy as np
 import torch
 import yaml
 
-with open("configs/config.yaml") as f:
-    cfg = yaml.safe_load(f)
-
+from utils.config import load_config
+cfg = load_config()
 
 def create_synthetic_patch(site_type_idx):
     """
@@ -145,6 +144,62 @@ def create_synthetic_processed_patches(n_samples):
     processed_dir = cfg['paths']['processed_data']
     os.makedirs(processed_dir, exist_ok=True)
 
-    site_types   = cfg['sites']['classes']
+    site_types = cfg['sites']['classes']
     label_to_int = {
-        name: i for i, name in
+        name: i for i, name in enumerate(site_types)
+    }
+
+    site_ids = []
+    site_type_names = []
+
+    for i in range(n_samples):
+        # Evenly cycle through the 6 site types
+        type_idx = i % len(site_types)
+        site_type_name = site_types[type_idx]
+
+        site_id = f"synthetic_{i:04d}"
+
+        patch = create_synthetic_patch(type_idx)
+
+        save_path = os.path.join(processed_dir, f"{site_id}.pt")
+        torch.save({
+            'image': patch,
+            'label': type_idx,
+            'site_type': site_type_name,
+            'site_id': site_id
+        }, save_path)
+
+        site_ids.append(site_id)
+        site_type_names.append(site_type_name)
+
+    print(f"Created {n_samples} synthetic patches → {processed_dir}")
+
+    # Also create a matching fake GeoJSON, for completeness /
+    # in case anything downstream expects labels/eamena_sites.geojson
+    create_synthetic_geojson(
+        site_ids, site_type_names, cfg['paths']['eamena_geojson']
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Generate synthetic training data"
+    )
+    parser.add_argument(
+        '--n_samples', type=int, default=120,
+        help="Number of synthetic patches to create"
+    )
+    args = parser.parse_args()
+
+    print("=" * 50)
+    print(f"Generating {args.n_samples} synthetic patches...")
+    print("=" * 50)
+
+    create_synthetic_processed_patches(args.n_samples)
+
+    print("\nDone. You can now run:")
+    print("  python main.py --stage train")
+
+
+if __name__ == "__main__":
+    main()

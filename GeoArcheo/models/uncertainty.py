@@ -18,8 +18,8 @@
 import numpy as np
 import yaml
 
-with open("configs/config.yaml") as f:
-    cfg = yaml.safe_load(f)
+from utils.config import load_config
+cfg = load_config()
 
 
 class ConformalPredictor:
