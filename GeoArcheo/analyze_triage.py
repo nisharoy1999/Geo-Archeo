@@ -137,8 +137,8 @@ def main():
             ys = [1 - triage(scores[m], fold, is_site, a)[~is_site].mean() for a in grid]
             ax.plot(1 - grid, ys, lw=2, label=NAMES.get(m, m))
         ax.plot(1 - grid, grid, "k--", lw=1, label="No skill")
-        ax.set_xlabel("Target share of sites found (conformal guarantee)")
-        ax.set_ylabel("Share of ground that can be skipped")
+        ax.set_xlabel("Target share of sites retained (conformal-style threshold)")
+        ax.set_ylabel("Share of sampled patches deprioritized")
         ax.set_title("Survey triage under region-held-out testing")
         ax.grid(alpha=0.3)
         ax.legend(frameon=False)
